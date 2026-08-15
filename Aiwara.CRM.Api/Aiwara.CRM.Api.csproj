@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Aiwara.CRM.Api</RootNamespace>
+    <AssemblyName>Aiwara.CRM.Api</AssemblyName>
+    <UserSecretsId>aiwara-crm-api-secrets</UserSecretsId>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <OutputType>WinExe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- OpenAPI nativo (reemplaza a Swashbuckle, no compatible con .NET 9+) -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.1.9" />
+
+    <!-- Acceso a datos -->
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+
+    <!-- Mapeo de objetos -->
+    <PackageReference Include="AutoMapper" Version="14.0.0" />
+
+    <!-- Validaciones -->
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+  </ItemGroup>
+
+</Project>
