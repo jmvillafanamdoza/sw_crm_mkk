@@ -55,7 +55,7 @@ En SSMS, activa *Query > SQLCMD Mode* y abre `00_ejecutar_todo.sql` desde la car
 | Comisiones | `PRMKK_CON_BOF_COMISION_REGLA`, `PRMKK_INS_BOF_COMISION_REGLA`, `PRMKK_UPD_BOF_EST_COMISION_REGLA`, `PRMKK_PRC_BOF_CALCULAR_COMISION`, `PRMKK_CON_BOF_COMISION`, `PRMKK_CON_BOF_COMISION_DETALLE`, `PRMKK_UPD_BOF_COMISION_ESTADO` |
 | HeadCount | `PRMKK_CON_BOF_PERSONAL`, `PRMKK_CON_BOF_PERSONAL_PERIODO`, `PRMKK_CON_BOF_PERSONAL_INDICADORES`, `PRMKK_CON_BOF_ASISTENCIA_MATRIZ @i_CPEL_ID_PERSONAL` (diálogo de asistencias) |
 | HeadCount > Registro-Bajas | `PRMKK_CON_BOF_PERSONAL_POR_DOCUMENTO`, `PRMKK_INS_BOF_PERSONAL_BAJA` |
-| Mantenimiento > Usuarios | `PRMKK_CON_BOF_USUARIO`, `PRMKK_CON_BOF_USUARIO_RESUMEN`, `PRMKK_INS_BOF_USUARIO`, `PRMKK_UPD_BOF_USUARIO`, `PRMKK_UPD_BOF_EST_USUARIO`, `PRMKK_CON_BOF_PERFIL`, `PRMKK_CON_BOF_SUPERVISOR` |
+| Mantenimiento > Usuarios | `PRMKK_CON_BOF_USUARIO`, `PRMKK_CON_BOF_USUARIO_RESUMEN` (3 result sets), `PRMKK_INS_BOF_USUARIO`, `PRMKK_UPD_BOF_USUARIO`, `PRMKK_UPD_BOF_EST_USUARIO`, `PRMKK_UPD_BOF_CAMBIAR_PASSWORD` (restablecer contraseña); combos: `PRMKK_CON_BOF_PERFIL`, `PRMKK_CON_BOF_SEDE`, `PRMKK_CON_BOF_CAMPANIA`, `PRMKK_CON_BOF_SUPERVISOR`, `PRMKK_CON_BOF_TIP_VALOR 'PUESTO_TRABAJO' / 'MODALIDAD_TRABAJO'`. API: `/api/usuarios` y `/api/catalogos` |
 | Mantenimiento > Campañas / Estados / Operadores | `PRMKK_*_BOF_CAMPANIA`, `PRMKK_*_BOF_TIP_VALOR` (grupo `TIP_ESTADO_VENTA`), `PRMKK_*_BOF_OPERADOR`, `PRMKK_*_BOF_PLAN`, `PRMKK_*_BOF_SEDE` |
 | Perfil | `PRMKK_CON_BOF_PERFIL_USUARIO`, `PRMKK_UPD_BOF_PERFIL_USUARIO`, `PRMKK_UPD_BOF_CAMBIAR_PASSWORD`, `PRMKK_CON_BOF_BITACORA`, `PRMKK_CON_BOF_NOTIFICACION`, `PRMKK_UPD_BOF_NOTIFICACION_LEIDA` |
 
@@ -66,6 +66,7 @@ Todos los SPs de escritura devuelven `@o_resultMessage` con el formato `'1|mensa
 - **Estados de registro.** `V` = vigente, `I` = inactivo. En `TMKK_PERSONAL` también existe `B` = baja.
 - **Contraseñas y tokens.** Solo se guardan hashes; la API genera y verifica los hashes (BCrypt o Argon2).
 - **Usuario del front.** Equivale a `TPLS_PERSONA` + `TMKK_USUARIO` + `TMKK_USUARIO_PERFIL` + `TMKK_PERSONAL`; los SPs de usuarios mantienen las cuatro tablas sincronizadas.
+- **Sedes.** La operación tiene tres: LOS OLIVOS, SAN JUAN DE LURIGANCHO y SURCO (`TMKK_SEDE`, en `03_maestros.sql`). LINCE, sembrada en una versión anterior, queda inactiva. La sede del usuario se guarda en `TMKK_PERSONAL.CSED_ID_SEDE` y es obligatoria al crear o editar un usuario. Si una sede se inactiva, sus usuarios pueden conservarla, pero no se puede asignar a nadie más.
 - **Bajas y reingresos.** Se registran en `TMKK_PERSONAL_PERIODO`, la fuente del diálogo "Histórico".
 - **Nombre completo.** El front captura "Nombres y Apellidos" en un solo campo; se guarda en `TPLS_PERSONA.SPER_NOM_COMPLETO`.
 - **Venta nueva.** Arranca en estado `PENDIENTE` (`'3'`). Pasar a `CAIDO` exige un motivo de caída. Pasar a `ACTIVADO` registra la fecha de activación, que es la fecha que usan las comisiones.
@@ -77,5 +78,5 @@ Todos los SPs de escritura devuelven `@o_resultMessage` con el formato `'1|mensa
 - **Reglas de comisión.** No se cargó ninguna; los montos los debe definir el negocio.
 - **Ubigeo.** Solo están los distritos que usa el front hoy; falta cargar la lista oficial del INEI.
 - **Accesos por perfil.** Los accesos de SUPERVISOR, ASESOR y BACKOFFICE son una propuesta; están en `02_seguridad_login.sql`.
-- **Usuario administrador inicial.** No se creó, porque su contraseña depende del algoritmo de hash de la API. Créalo con `PRMKK_INS_BOF_USUARIO` desde la API.
+- **Usuario administrador inicial.** No se creó. La API usa BCrypt: créalo con `POST /api/usuarios` (perfil ADMINISTRADOR); la respuesta trae la contraseña temporal.
 - **"Procesos y Reportes".** La página está vacía en el front y no tiene SPs todavía.

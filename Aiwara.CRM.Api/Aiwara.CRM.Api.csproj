@@ -16,6 +16,9 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.1.9" />
 
+    <!-- Hash de contraseñas -->
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+
     <!-- Acceso a datos -->
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />

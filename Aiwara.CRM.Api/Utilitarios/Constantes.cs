@@ -6,6 +6,8 @@ public static class Constantes
     {
         public const string Ejemplo = "Ejemplo";
         public const string TipoValor = "Tipos de Valor";
+        public const string Usuario = "Usuarios";
+        public const string Catalogo = "Catálogos";
     }
 
     public static class Mensajes

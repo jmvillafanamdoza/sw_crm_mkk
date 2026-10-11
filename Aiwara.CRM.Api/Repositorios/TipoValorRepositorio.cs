@@ -1,5 +1,6 @@
 ﻿using Aiwara.CRM.Api.DTOs;
 using Aiwara.CRM.Api.Entidades;
+using Aiwara.CRM.Api.Utilitarios;
 using Dapper;
 using System.Data;
 
@@ -179,7 +180,7 @@ public class TipoValorRepositorio : ITipoValorRepositorio
 
             // Obtener el mensaje de resultado del OUTPUT parameter
             var mensajeRespuesta = parametros.Get<string>("@o_resultMessage");
-            var respuesta = ParsearRespuestaSp(mensajeRespuesta);
+            var respuesta = RespuestaSp.Parsear(mensajeRespuesta);
 
             if (!respuesta.EsExitoso)
             {
@@ -230,7 +231,7 @@ public class TipoValorRepositorio : ITipoValorRepositorio
             );
 
             var mensajeRespuesta = parametros.Get<string>("@o_resultMessage");
-            var respuesta = ParsearRespuestaSp(mensajeRespuesta);
+            var respuesta = RespuestaSp.Parsear(mensajeRespuesta);
 
             if (!respuesta.EsExitoso)
             {
@@ -290,7 +291,7 @@ public class TipoValorRepositorio : ITipoValorRepositorio
             );
 
             var mensajeRespuesta = parametros.Get<string>("@o_resultMessage");
-            var respuesta = ParsearRespuestaSp(mensajeRespuesta);
+            var respuesta = RespuestaSp.Parsear(mensajeRespuesta);
 
             if (!respuesta.EsExitoso)
             {
@@ -337,7 +338,7 @@ public class TipoValorRepositorio : ITipoValorRepositorio
             );
 
             var mensajeRespuesta = parametros.Get<string>("@o_resultMessage");
-            var respuesta = ParsearRespuestaSp(mensajeRespuesta);
+            var respuesta = RespuestaSp.Parsear(mensajeRespuesta);
 
             if (!respuesta.EsExitoso)
             {
@@ -353,25 +354,5 @@ public class TipoValorRepositorio : ITipoValorRepositorio
             return RespuestaOperacionDto<object>.Error(
                 $"Error al eliminar tipo de valor: {ex.Message}");
         }
-    }
-
-    // ==================== MÉTODOS AUXILIARES ====================
-
-    /// <summary>
-    /// Parsea la respuesta del Stored Procedure en formato "1|mensaje" o "0|error"
-    /// Retorna objeto con EsExitoso y Mensaje
-    /// </summary>
-    private static (bool EsExitoso, string Mensaje) ParsearRespuestaSp(string? respuesta)
-    {
-        if (string.IsNullOrEmpty(respuesta))
-        {
-            return (false, "Sin respuesta del servidor");
-        }
-
-        var partes = respuesta.Split('|');
-        var esExitoso = partes[0] == "1";
-        var mensaje = partes.Length > 1 ? string.Join("|", partes.Skip(1)) : string.Empty;
-
-        return (esExitoso, mensaje);
     }
 }

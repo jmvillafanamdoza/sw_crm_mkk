@@ -41,6 +41,8 @@ builder.Services.AddAiwaraOpenApi();
 builder.Services.AddScoped<IConnectionFactory, ConnectionFactory>();
 builder.Services.AddScoped<IEjemploRepositorio, EjemploRepositorio>();
 builder.Services.AddScoped<ITipoValorRepositorio, TipoValorRepositorio>();
+builder.Services.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
+builder.Services.AddScoped<ICatalogoRepositorio, CatalogoRepositorio>();
 
 // ---------------------------------------------------------------------
 // 5. AutoMapper (perfiles se detectan automáticamente en Utilitarios/)
@@ -79,5 +81,7 @@ app.UseCors(corsPolicyName);
 
 // Registro de endpoints (Minimal API) agrupados por dominio
 app.MapTipoValorEndpoints();
+app.MapUsuarioEndpoints();
+app.MapCatalogoEndpoints();
 
 app.Run();

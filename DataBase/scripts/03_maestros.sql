@@ -77,6 +77,7 @@ SELECT u.cod, u.dep, u.prov, u.dist, GETDATE(), 'AIW_SISTEMAS'
 FROM (VALUES
     ('150101', 'LIMA',   'LIMA',   'LIMA'),
     ('150116', 'LIMA',   'LIMA',   'LINCE'),
+    ('150117', 'LIMA',   'LIMA',   'LOS OLIVOS'),
     ('150132', 'LIMA',   'LIMA',   'SAN JUAN DE LURIGANCHO'),
     ('150140', 'LIMA',   'LIMA',   'SANTIAGO DE SURCO'),
     ('070101', 'CALLAO', 'CALLAO', 'CALLAO'),
@@ -96,14 +97,22 @@ FROM (VALUES
 ) c (nombre, color)
 WHERE NOT EXISTS (SELECT 1 FROM dbo.TMKK_CAMPANIA x WHERE x.SCAM_NOMBRE = c.nombre);
 
+-- Sedes de la operación (Mantenimiento > Usuarios > Sede)
 INSERT INTO dbo.TMKK_SEDE (SSED_NOMBRE, CUBI_COD_UBIGEO, FSED_ESTADO, AUD_INS_FEC, AUD_INS_USER)
 SELECT s.nombre, s.ubigeo, 'V', GETDATE(), 'AIW_SISTEMAS'
 FROM (VALUES
-    ('SURCO',                  '150140'),
+    ('LOS OLIVOS',             '150117'),
     ('SAN JUAN DE LURIGANCHO', '150132'),
-    ('LINCE',                  '150116')
+    ('SURCO',                  '150140')
 ) s (nombre, ubigeo)
 WHERE NOT EXISTS (SELECT 1 FROM dbo.TMKK_SEDE x WHERE x.SSED_NOMBRE = s.nombre);
+
+-- LINCE se sembró en una versión anterior de este script y no es sede de la
+-- operación. Se inactiva solo si nadie la modificó desde entonces, para no pisar
+-- una reactivación manual desde Mantenimiento.
+UPDATE dbo.TMKK_SEDE
+SET FSED_ESTADO = 'I', AUD_UPD_FEC = GETDATE(), AUD_UPD_USER = 'AIW_SISTEMAS'
+WHERE SSED_NOMBRE = 'LINCE' AND FSED_ESTADO = 'V' AND AUD_INS_USER = 'AIW_SISTEMAS' AND AUD_UPD_FEC IS NULL;
 
 -- Planes del Registro de Ventas
 INSERT INTO dbo.TMKK_PLAN (SPLN_NOMBRE, SPLN_DES_PLAN, NPLN_VALOR_PLAN, FPLN_ESTADO, AUD_INS_FEC, AUD_INS_USER)

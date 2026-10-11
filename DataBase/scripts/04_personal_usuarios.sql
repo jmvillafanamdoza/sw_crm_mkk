@@ -375,6 +375,7 @@ CREATE OR ALTER PROCEDURE dbo.PRMKK_CON_BOF_USUARIO
     @i_CUSU_ID_USUARIO  INT          = NULL,
     @i_CPFL_ID_PERFIL   INT          = NULL,
     @i_CCAM_ID_CAMPANIA INT          = NULL,   -- -1 = sin campaña
+    @i_CSED_ID_SEDE     INT          = NULL,   -- -1 = sin sede
     @i_SOLO_VENCIDOS    CHAR(1)      = 'N',    -- S = solo contratos vencidos
     @i_ESTADO           CHAR(1)      = NULL,   -- V / I
     @i_TEXTO            VARCHAR(100) = NULL
@@ -392,12 +393,14 @@ BEGIN
         p.SPER_NRO_DOC_IDENTIDAD                    AS SNRO_DOCUMENTO,
         COALESCE(p.SPER_NOM_COMPLETO, LTRIM(CONCAT(p.SPER_APE_PATERNO, ' ', p.SPER_APE_MATERNO, ' ', p.SPER_NOMBRE))) AS SNOMBRE_COMPLETO,
         COALESCE(p.SPER_COR_LABORAL, p.SPER_COR_PERSONAL) AS SCORREO,
+        p.SPER_CELULAR                              AS SCELULAR,
         u.SUSU_USERNAME,
         pf.CPFL_ID_PERFIL,
         pf.SPFL_NOMBRE                              AS SPERFIL,
         pe.CCAM_ID_CAMPANIA,
         c.SCAM_NOMBRE                               AS SCAMPANIA,
         pe.CSED_ID_SEDE,
+        s.SSED_NOMBRE                               AS SSEDE,
         pe.CPEL_PUESTO,
         pe.FPEL_MODALIDAD,
         pe.CPEL_ID_SUPERVISOR,
@@ -405,6 +408,7 @@ BEGIN
         pe.CPEL_ID_VENTA                            AS SID_VENTA,
         pe.CPEL_ID_OVER                             AS SID_OVER,
         pe.CPEl_ID_VICIDIAL                         AS SID_VICI,
+        pe.SPEL_NUM_CUENTA                          AS SNUM_CUENTA,
         CONVERT(VARCHAR(5), pe.HPEL_HORA_INICIO, 108) AS SHORA_INICIO,
         CONVERT(VARCHAR(5), pe.HPEL_HORA_FIN, 108)    AS SHORA_FIN,
         CAST(pe.FPEl_INGRESO AS DATE)               AS DFEC_INGRESO,
@@ -423,23 +427,28 @@ BEGIN
                  ORDER BY up.DUSR_FECHA_ASIGNACION DESC) upa
     LEFT JOIN dbo.TMKK_PERFIL pf ON pf.CPFL_ID_PERFIL = COALESCE(upa.CPFL_ID_PERFIL, pe.CPFL_ID_PERFIL)
     LEFT JOIN dbo.TMKK_CAMPANIA c ON c.CCAM_ID_CAMPANIA = pe.CCAM_ID_CAMPANIA
+    LEFT JOIN dbo.TMKK_SEDE s ON s.CSED_ID_SEDE = pe.CSED_ID_SEDE
     WHERE (@i_CUSU_ID_USUARIO IS NULL OR u.CUSU_ID_USUARIO = @i_CUSU_ID_USUARIO)
       AND (@i_CPFL_ID_PERFIL IS NULL OR pf.CPFL_ID_PERFIL = @i_CPFL_ID_PERFIL)
       AND (@i_CCAM_ID_CAMPANIA IS NULL
            OR (@i_CCAM_ID_CAMPANIA = -1 AND pe.CCAM_ID_CAMPANIA IS NULL)
            OR pe.CCAM_ID_CAMPANIA = @i_CCAM_ID_CAMPANIA)
+      AND (@i_CSED_ID_SEDE IS NULL
+           OR (@i_CSED_ID_SEDE = -1 AND pe.CSED_ID_SEDE IS NULL)
+           OR pe.CSED_ID_SEDE = @i_CSED_ID_SEDE)
       AND (ISNULL(@i_SOLO_VENCIDOS, 'N') <> 'S'
            OR (pe.FPEl_FIN_CONTRATO IS NOT NULL AND CAST(pe.FPEl_FIN_CONTRATO AS DATE) < @hoy))
       AND (NULLIF(@i_ESTADO, '') IS NULL OR u.FUSU_ESTADO = @i_ESTADO)
       AND (NULLIF(@i_TEXTO, '') IS NULL
            OR u.SUSU_USERNAME LIKE '%' + @i_TEXTO + '%'
            OR pf.SPFL_NOMBRE LIKE '%' + @i_TEXTO + '%'
+           OR p.SPER_NRO_DOC_IDENTIDAD LIKE @i_TEXTO + '%'
            OR COALESCE(p.SPER_NOM_COMPLETO, CONCAT(p.SPER_APE_PATERNO, ' ', p.SPER_APE_MATERNO, ' ', p.SPER_NOMBRE)) LIKE '%' + @i_TEXTO + '%')
     ORDER BY u.CUSU_ID_USUARIO;
 END
 GO
 
--- Tarjetas de Mantenimiento > Usuarios. Result set 1: totales; 2: activos por campaña.
+-- Tarjetas de Mantenimiento > Usuarios. Result set 1: totales; 2: activos por campaña; 3: activos por sede.
 CREATE OR ALTER PROCEDURE dbo.PRMKK_CON_BOF_USUARIO_RESUMEN
 AS
 BEGIN
@@ -460,6 +469,14 @@ BEGIN
     WHERE c.FCAM_ESTADO = 'V'
     GROUP BY c.CCAM_ID_CAMPANIA, c.SCAM_NOMBRE
     ORDER BY c.SCAM_NOMBRE;
+
+    SELECT s.CSED_ID_SEDE, s.SSED_NOMBRE, COUNT(u.CUSU_ID_USUARIO) AS NUSUARIOS
+    FROM dbo.TMKK_SEDE s
+    LEFT JOIN dbo.TMKK_PERSONAL pe ON pe.CSED_ID_SEDE = s.CSED_ID_SEDE
+    LEFT JOIN dbo.TMKK_USUARIO u ON u.CUSU_ID_USUARIO = pe.CUSU_ID_USUARIO AND u.FUSU_ESTADO = 'V'
+    WHERE s.FSED_ESTADO = 'V'
+    GROUP BY s.CSED_ID_SEDE, s.SSED_NOMBRE
+    ORDER BY s.SSED_NOMBRE;
 END
 GO
 
@@ -514,6 +531,12 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM dbo.TMKK_PERFIL WHERE CPFL_ID_PERFIL = @i_CPFL_ID_PERFIL AND FPFL_ESTADO = 'V')
         BEGIN
             SET @o_resultMessage = '0|Perfil no válido';
+            RETURN;
+        END
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.TMKK_SEDE WHERE CSED_ID_SEDE = @i_CSED_ID_SEDE AND FSED_ESTADO = 'V')
+        BEGIN
+            SET @o_resultMessage = '0|Seleccione una sede válida';
             RETURN;
         END
 
@@ -617,9 +640,10 @@ BEGIN
     SET NOCOUNT ON;
 
     BEGIN TRY
-        DECLARE @persona INT, @personal INT, @estadoPersonal CHAR(1);
+        DECLARE @persona INT, @personal INT, @estadoPersonal CHAR(1), @sedeActual INT;
 
-        SELECT @persona = u.CPER_ID_PERSONA, @personal = pe.CPEL_ID_PERSONAL, @estadoPersonal = pe.FPEl_ESTADO
+        SELECT @persona = u.CPER_ID_PERSONA, @personal = pe.CPEL_ID_PERSONAL, @estadoPersonal = pe.FPEl_ESTADO,
+               @sedeActual = pe.CSED_ID_SEDE
         FROM dbo.TMKK_USUARIO u
         LEFT JOIN dbo.TMKK_PERSONAL pe ON pe.CUSU_ID_USUARIO = u.CUSU_ID_USUARIO
         WHERE u.CUSU_ID_USUARIO = @i_CUSU_ID_USUARIO;
@@ -641,6 +665,15 @@ BEGIN
             WHERE p.SPER_NRO_DOC_IDENTIDAD = @i_NRO_DOC AND p.FPER_TIP_DOC_IDENTIDAD = @i_TIP_DOC AND p.CPER_ID_PERSONA <> @persona)
         BEGIN
             SET @o_resultMessage = '0|Otro usuario ya tiene el documento ' + @i_NRO_DOC;
+            RETURN;
+        END
+
+        -- Puede conservar su sede aunque se haya inactivado, pero no pasar a una inactiva
+        IF @i_CSED_ID_SEDE IS NULL
+           OR (@i_CSED_ID_SEDE <> ISNULL(@sedeActual, 0)
+               AND NOT EXISTS (SELECT 1 FROM dbo.TMKK_SEDE WHERE CSED_ID_SEDE = @i_CSED_ID_SEDE AND FSED_ESTADO = 'V'))
+        BEGIN
+            SET @o_resultMessage = '0|Seleccione una sede válida';
             RETURN;
         END
 

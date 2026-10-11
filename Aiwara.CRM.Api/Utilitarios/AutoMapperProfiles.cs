@@ -16,5 +16,10 @@ public class AutoMapperProfiles : Profile
         // Mapeos de Tipo de Valor
         CreateMap<ETipoValor, TipoValorDto>();
         CreateMap<CrearTipoValorDto, ETipoValor>();
+
+        // Mapeos de Usuario
+        CreateMap<EUsuario, UsuarioDto>();
+        CreateMap<GuardarUsuarioDto, EUsuario>()
+            .ForMember(dest => dest.Estado, opt => opt.MapFrom(src => src.Estado.ToUpper()));
     }
 }
